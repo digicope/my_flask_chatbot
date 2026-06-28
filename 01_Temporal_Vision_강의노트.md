@@ -11,11 +11,11 @@
 | 섹션 | 주제 | 한 줄 요약 |
 |------|------|-----------|
 | 0 | 환경 및 데이터 | 비디오를 읽고, 분석할 준비를 한다 |
-| 1 | Spatiotemporal(시공간) 정보 | 공간(한 장면)과 시간(움직임)을 구분한다 |
+| 1 | Spatiotemporal(시공간) | 공간(한 장면)과 시간(움직임)을 구분한다 |
 | 2 | Optical Flow(광학 흐름) | 픽셀이 어디로 움직였는지 계산한다 |
-| 3 | SlowFast(슬로우패스트) | 느린 경로 + 빠른 경로로 효율적으로 본다 |
+| 3 | SlowFast | 느린 경로 + 빠른 경로로 효율적으로 본다 |
 | 4 | 3D CNN | 시간 축까지 포함한 합성곱으로 행동을 인식한다 |
-| 5 | Video Transformer(비디오 트랜스포머) | Attention(어텐션)으로 시공간 패턴을 학습한다 |
+| 5 | Video Transformer | Attention으로 시공간 패턴을 학습한다 |
 | 6 | 모델 비교 요약 | Classical → 3D CNN → Transformer 진화를 정리한다 |
 
 ---
@@ -25,67 +25,33 @@
 ### 이 섹션에서 배우는 것
 
 - 비디오 AI 실습에 필요한 라이브러리와 샘플 영상을 준비한다.
-- 비디오를 프레임 단위로 읽고, 모델 입력 형식으로 변환하는 **공통 도구 함수**를 이해한다.
+- 비디오를 프레임 단위로 읽고, 모델 입력 형식으로 변환하는 공통 도구 함수를 이해한다.
 
-### 핵심 용어
+### Vision·Video AI 전문 용어 (강의용)
 
-- **Temporal Vision(템포럴 비전):** 시간에 따라 변하는 영상(비디오)을 이해하는 컴퓨터 비전 분야
-- **Spatiotemporal(스페이시오템포럴, 시공간):** Spatial(공간) + Temporal(시간)을 합친 말. "어디에 무엇이 있고, 어떻게 움직이는가"를 함께 다룬다
-- **Frame(프레임):** 비디오를 잘게 나눈 한 장의 이미지. 영화 필름의 한 컷과 같다
-- **FPS(에프피에스, Frames Per Second):** 1초에 몇 장의 프레임이 있는지. 숫자가 클수록 부드럽다
-- **BGR(비지알):** OpenCV(오픈씨브이)가 기본으로 쓰는 색 순서 (Blue, Green, Red)
-- **RGB(알지비):** 딥러닝 모델이 주로 쓰는 색 순서 (Red, Green, Blue)
-- **PyTorch(파이토치):** 딥러닝 프레임워크
-- **torchvision(토치비전):** PyTorch용 이미지·비디오 모델 라이브러리
-- **Transformers(트랜스포머스):** Hugging Face(허깅페이스)의 사전학습 모델 라이브러리
-- **Kinetics-400(키네틱스-400):** 400가지 사람 행동(걷기, 양궁 등)으로 학습된 대표 비디오 데이터셋
+**Temporal Vision(템포럴 비전)**  
+시간에 따라 변하는 영상(비디오)을 이해하는 컴퓨터 비전 분야입니다. 단일 사진은 "지금 화면에 무엇이 있는가"만 답하지만, Temporal Vision은 "어떻게 움직이고 변하는가"까지 함께 다룹니다. 행동 인식, 이상 탐지, 영상 요약 등 대부분의 Video AI가 이 범주에 속합니다.
 
-### 필요 패키지
+**Spatiotemporal(시공간, 스페이시오템포럴)**  
+Spatial(공간: 한 장면 안의 위치·형태)과 Temporal(시간: 프레임 간 변화)을 합친 개념입니다. "어디에 무엇이 있고, 시간이 지나면서 어떻게 바뀌는가"를 동시에 표현할 때 씁니다. 3D CNN, Video Transformer, Optical Flow 모두 시공간 정보를 다루는 방법입니다.
 
-```
-opencv-python, numpy, matplotlib, torch, torchvision, transformers, Pillow
-```
+**Kinetics-400(키네틱스-400)**  
+걷기, 양궁, 춤 등 400가지 사람 행동 클립으로 학습된 대표 비디오 데이터셋입니다. 본 실습의 R3D, TimeSformer, ViViT 등 대부분 모델이 이 데이터로 사전학습(pretrain)되어 있어, archery 영상에 "archery" 라벨을 예측할 수 있습니다.
 
 ### 소스코드 핵심 기능
 
-#### ① 전역 설정 (Cell 4)
-
 | 변수/함수 | 역할 |
 |-----------|------|
-| `VIDEO_URL`, `VIDEO_PATH` | 샘플 영상 URL과 로컬 저장 경로 |
-| `OUTPUT_DIR` 등 | 결과 이미지 저장 폴더 (`output/optical_flow`, `slowfast`, `spatiotemporal`) |
-| `TIMESFORMER_NUM_FRAMES = 8` | TimeSformer(타임스포머)는 8프레임 입력 |
-| `VIVIT_NUM_FRAMES = 32` | ViViT(비비트)는 32프레임 입력 |
-| `R3D_NUM_FRAMES = 16` | R3D/MC3는 16프레임, 112×112 크기 |
-| `SLOWFAST_ALPHA = 4` | SlowFast에서 Fast 경로가 Slow보다 4배 많은 프레임 사용 |
-| `setup_matplotlib_korean()` | 그래프 한글 폰트(맑은 고딕 등) 자동 설정 |
+| `TIMESFORMER_NUM_FRAMES = 8` | TimeSformer 입력 프레임 수 |
+| `VIVIT_NUM_FRAMES = 32` | ViViT 입력 프레임 수 |
+| `R3D_NUM_FRAMES = 16` | R3D/MC3 입력 (112×112) |
+| `SLOWFAST_ALPHA = 4` | Fast 경로가 Slow보다 4배 많은 프레임 |
+| `download_sample_video()` | archery.mp4 다운로드 |
+| `read_all_frames_bgr()` | 전체 프레임 BGR 배열 |
+| `sample_frame_indices()` | 균등 간격 N개 인덱스 |
+| `analyze_video_metadata()` | 해상도, FPS, 재생 시간 |
 
-> **강의 포인트:** 모델마다 필요한 프레임 수와 해상도가 다르다. "비디오를 통째로 넣는다"가 아니라 **고정 길이 클립(clip)** 으로 잘라 넣는다.
-
-#### ② `download_sample_video()`
-
-- Colab / Windows / Linux 환경에 맞게 `archery.mp4`를 다운로드한다.
-- 이미 파일이 있으면 **재다운로드하지 않는다.**
-
-#### ③ `read_all_frames_bgr()`
-
-- OpenCV `VideoCapture`로 비디오 전체를 읽어 **BGR numpy 배열 리스트**로 반환한다.
-- shape: `(높이, 너비, 3)`, dtype: `uint8` (0~255 정수)
-
-#### ④ `sample_frame_indices()`
-
-- 전체 프레임 중 **균등 간격**으로 N개 인덱스를 뽑는다.
-- 예: 100프레임 영상에서 8프레임 → 0, 14, 28, … 99번 프레임 선택
-
-#### ⑤ `read_sampled_rgb_frames()`
-
-- 균등 샘플링 후 BGR → RGB 변환.
-- 프레임이 부족하면 마지막 프레임을 반복해 길이를 맞춘다.
-
-#### ⑥ `VideoMetadata` / `analyze_video_metadata()`
-
-- 비디오의 **공간 정보**(가로×세로)와 **시간 정보**(FPS, 총 프레임, 재생 시간)를 추출한다.
-- `frame_count / fps = duration_sec` (재생 시간 계산)
+> **강의 포인트:** 모델마다 입력 프레임 수·해상도가 다릅니다. 영상 전체가 아니라 **고정 길이 clip**으로 잘라 넣습니다.
 
 ---
 
@@ -94,61 +60,40 @@ opencv-python, numpy, matplotlib, torch, torchvision, transformers, Pillow
 ### 이 섹션에서 배우는 것
 
 - 비디오를 **공간(Spatial)** 과 **시간(Temporal)** 두 관점으로 나누어 본다.
-- 가장 단순한 시간 특징인 **프레임 차분**과 **Motion Energy(모션 에너지)** 를 계산한다.
+- 프레임 차분과 **Motion Energy**로 가장 단순한 시간 특징을 계산한다.
 
-### 핵심 용어
+### Vision·Video AI 전문 용어 (강의용)
 
-- **Spatial Context(스페이셜 컨텍스트, 공간 맥락):** 한 장의 프레임 안에서 보이는 것 — 사람 모양, 활 색깔, 배경 등 **정적(고정) 정보**
-- **Temporal Context(템포럴 컨텍스트, 시간 맥락):** 프레임과 프레임 사이의 **변화** — 팔 움직임, 화살 발사 순서 등 **동적(움직임) 정보**
-- **Frame Difference(프레임 디퍼런스, 프레임 차분):** 연속 두 프레임의 픽셀 값 차이 `|F(t+1) - F(t)|`. 차이가 크면 그 구역에 움직임이 있다
-- **Motion Energy(모션 에너지):** 프레임 차분 값의 평균 등으로 "이 순간 얼마나 많이 움직였는지"를 숫자로 표현한 것
-- **Grayscale(그레이스케일):** 흑백 이미지. 색 정보 없이 밝기만 사용 → 계산이 빠르다
-- **CNN(씨엔엔, Convolutional Neural Network):** 2D 이미지의 공간 특징을 잘 뽑는 신경망
-- **ViT(브이아이티, Vision Transformer):** 이미지를 패치 단위로 나눠 Attention으로 처리하는 모델
+**Spatial Context(공간 맥락)**  
+한 장의 프레임 안에서 보이는 정적 정보입니다. 사람 모양, 활의 형태, 배경 등 "지금 이 순간 화면에 무엇이 있는가"에 해당합니다. 2D CNN·ViT가 잘 추출하는 정보입니다.
 
-### 개념 비유 (초보자용)
+**Temporal Context(시간 맥락)**  
+프레임과 프레임 사이의 변화, 즉 동적 정보입니다. 팔을 당기는 순서, 화살이 날아가는 타이밍처럼 "어떻게 변하는가"를 담습니다. 비디오 AI가 사진 AI와 다른 이유가 바로 이 정보를 쓰기 때문입니다.
+
+**Frame Difference(프레임 차분)**  
+연속 두 프레임의 픽셀 값 차이 `|F(t+1) − F(t)|`입니다. 차이가 큰 영역은 움직임이 있다는 뜻입니다. Optical Flow보다 단순하지만, Motion Energy·이상 탐지의 1차 신호로 널리 씁니다.
+
+**Motion Energy(모션 에너지)**  
+프레임 차분(또는 Optical Flow 크기)을 하나의 숫자로 요약한 "그 순간 얼마나 움직였는가" 지표입니다. 시간축 그래프로 그리면 동작 peak·정지 trough를 볼 수 있어, 이후 주기 분석·이상 탐지의 기초가 됩니다.
+
+**CNN(Convolutional Neural Network, 합성곱 신경망)**  
+2D 이미지에서 가장자리·질감·형태 같은 **공간 특징**을 계층적으로 추출하는 신경망입니다. 프레임 한 장의 Spatial 정보에는 강하지만, 시간 축은 별도 설계(3D Conv, RNN, Transformer 등)가 필요합니다.
+
+**ViT(Vision Transformer, 비전 트랜스포머)**  
+이미지를 16×16 같은 **패치(patch)** 로 잘라 각 패치를 token으로 Transformer에 넣는 모델입니다. CNN은 지역적 convolution, ViT는 **Self-Attention**으로 패치 간 관계를 학습합니다. ImageNet 이후 비전 분야의 대표 아키텍처 중 하나입니다.
+
+### 개념 비유
 
 | 관점 | 질문 | 양궁 영상 예시 |
 |------|------|---------------|
-| Spatial(공간) | "지금 화면에 **무엇**이 있나?" | 활, 과녁, 양궁 선수 |
-| Temporal(시간) | "**어떻게** 변하나?" | 시위 당기기 → 발사 → 화살 비행 |
+| Spatial | "지금 화면에 **무엇**이 있나?" | 활, 과녁, 양궁 선수 |
+| Temporal | "**어떻게** 변하나?" | 시위 당기기 → 발사 → 화살 비행 |
 
-> **핵심:** 사진(1장)은 Spatial만, 비디오(여러 장)는 Spatial + Temporal을 함께 봐야 한다.
+### 소스코드 핵심
 
-### 소스코드 핵심 기능
-
-#### ① `visualize_spatiotemporal_overview()`
-
-```
-[상단] 시간 축을 따라 8개 프레임 격자 → Spatial 맥락
-[하단 좌] 단일 프레임 → 정적 특징
-[하단 우] |F(t+1)-F(t)| 차분 맵 → 동적 특징 (움직인 곳이 밝게)
-```
-
-- `cv2.absdiff()`: 두 그레이스케일 프레임의 절대 차분
-- `cmap="hot"`: 움직임이 큰 곳을 밝은색(빨강·노랑)으로 표시
-
-#### ② `compute_motion_energy_timeline()`
-
-전체 비디오에 대해 두 가지 지표를 프레임마다 계산:
-
-| 지표 | 계산 방법 | 의미 |
-|------|-----------|------|
-| Frame Diff Mean | `absdiff` 픽셀 평균 | 단순한 움직임 크기 |
-| Flow Magnitude Mean | Farneback(파르네백) 광학 흐름 크기 평균 | 더 정교한 움직임 크기 |
-
-#### ③ `plot_motion_energy_timeline()`
-
-- 위 두 지표를 **시간 축 그래프**로 그려, "어느 순간 동작이 활발한지" 한눈에 본다.
-
-#### ④ 섹션 1 실행 코드 (Cell 8)
-
-```python
-video_path = download_sample_video()
-meta = analyze_video_metadata(video_path)          # 메타데이터 출력
-visualize_spatiotemporal_overview(...)             # 공간 vs 시간 시각화
-plot_motion_energy_timeline(...)                   # Motion Energy 그래프
-```
+- `visualize_spatiotemporal_overview()` — 8프레임 격자 + 차분 맵
+- `compute_motion_energy_timeline()` — Frame Diff Mean + Flow Magnitude Mean
+- `plot_motion_energy_timeline()` — 시간축 그래프
 
 ---
 
@@ -156,350 +101,242 @@ plot_motion_energy_timeline(...)                   # Motion Energy 그래프
 
 ### 이 섹션에서 배우는 것
 
-- **Optical Flow(옵티컬 플로우, 광학 흐름):** 연속 프레임에서 각 픽셀(또는 특징점)이 **어디로, 얼마나** 이동했는지 벡터로 표현하는 기법
-- **Dense(덴스)** 방식(Farneback)과 **Sparse(스파스)** 방식(Lucas-Kanade)의 차이를 이해한다.
+- Optical Flow로 픽셀 이동 벡터를 추정한다.
+- **Dense(Farneback)** 와 **Sparse(Lucas-Kanade)** 방식의 차이를 이해한다.
 
-### 핵심 용어
+### Vision·Video AI 전문 용어 (강의용)
 
-- **Optical Flow(옵티컬 플로우, 광학 흐름):** "빛의 흐름"이라는 뜻. 실제로는 **픽셀 이동 벡터(화살표)** 를 추정하는 알고리즘 family
-- **Farneback(파르너백):** Gunnar Farneback(군나르 파르너백)이 제안한 **Dense Optical Flow** 알고리즘. **모든 픽셀**의 (dx, dy) 이동량을 추정한다
-- **Lucas-Kanade(루카스-카나데):** Bruce D. Lucas(루카스)와 Takeo Kanade(카나데)가 제안한 **Sparse Optical Flow** 알고리즘. **코너 특징점**만 골라 빠르게 추적한다
-- **Dense(덴스):** 모든 픽셀에 대해 흐름 계산 → 정보는 풍부, 연산량 큼
-- **Sparse(스파스):** 일부 특징점만 추적 → 빠르고 직관적
-- **HSV(에이치에스브이):** Hue(색상), Saturation(채도), Value(밝기) 색 공간. 광학 흐름 **방향=색**, **크기=밝기**로 시각화
-- **Hue(휴, 색상):** HSV에서 **각도(방향)** 를 색으로 표현
-- **Value(밸류, 밝기):** HSV에서 **크기(속력)** 를 밝기로 표현
-- **Shi-Tomasi(시-토마시):** 코너(모서리) 특징점을 찾는 알고리즘. `goodFeaturesToTrack`의 기반
-- **PyrLK(피라엘케이, Pyramid Lucas-Kanade):** 이미지 피라미드(여러 해상도)를 이용한 Lucas-Kanade 추적. `calcOpticalFlowPyrLK`
-- **Magnitude(매그니튜드, 크기):** 이동 벡터의 길이 = 움직임 속도
-- **FlowNet / PWC-Net / RAFT(플로우넷 / 피더블유씨넷 / 래프트):** 딥러닝 기반 광학 흐름의 발전 단계 (Classical → Deep Learning → SOTA)
+**Optical Flow(광학 흐름, 옵티컬 플로우)**  
+연속 프레임에서 각 픽셀(또는 특징점)이 **어디로, 얼마나** 이동했는지 (dx, dy) 벡터로 추정하는 기법 family입니다. 밝기 패턴이 프레임 간 어떻게 "흘러가는지"를 가정해 움직임을 계산합니다. 규칙 기반이라 학습 데이터 없이도 쓸 수 있어, 설비 모니터링·행동 분석 전처리에 자주 등장합니다.
 
-### Farneback vs Lucas-Kanade 비교
+**Farneback(파르너백) — Dense Optical Flow**  
+**모든 픽셀**에 대해 이동량을 추정하는 Dense 방식입니다. 다중 해상도 피라미드를 쓰며, 주변 15×15 영역의 밝기 변화를 보고 (dx, dy)를 구합니다. HSV 컬러맵(방향=색, 크기=밝기)으로 시각화하면 전체 움직임 패턴을 한눈에 볼 수 있습니다. 연산량은 크지만 정보가 풍부합니다.
+
+**Lucas-Kanade(루카스-카나데) — Sparse Optical Flow**  
+**코너 특징점**만 골라 빠르게 추적하는 Sparse 방식입니다. Shi-Tomasi로 코너를 찾고 `calcOpticalFlowPyrLK`(피라미드 LK)로 다음 프레임에서 같은 점을 따라갑니다. 화살표로 방향·크기를 그려 직관적이며, 실시간 추적에 적합합니다.
+
+**Dense vs Sparse**  
+Dense는 모든 픽셀, Sparse는 일부 점만 다룹니다. Dense는 "전체 장면이 어떻게 움직이는가", Sparse는 "이 코너들이 어디로 갔는가"에 초점을 둡니다.
+
+**HSV 시각화 (Optical Flow용)**  
+Flow 벡터의 **방향(angle)** 을 Hue(색상), **크기(magnitude)** 를 Value(밝기)에 매핑합니다. `cartToPolar`로 (dx, dy) → (magnitude, angle) 변환 후 HSV 이미지를 만듭니다.
+
+**Shi-Tomasi 코너 검출**  
+`goodFeaturesToTrack`의 기반 알고리즘입니다. 밝기가 사방으로 크게 변하는 "코너" 점을 찾아, LK 추적의 시작점으로 씁니다.
+
+**FlowNet / PWC-Net / RAFT (딥러닝 Optical Flow)**  
+Classical(Farneback, LK) 이후 딥러닝으로 end-to-end flow를 예측하는 모델들입니다. RAFT는 현재 SOTA급으로, occlusion·큰 움직임에서 Classical보다 정확하지만 GPU·학습 데이터가 필요합니다.
+
+### Farneback vs Lucas-Kanade
 
 | | Farneback | Lucas-Kanade |
 |---|-----------|--------------|
 | 유형 | Dense | Sparse |
-| 대상 | 모든 픽셀 | 코너 특징점 (~200개) |
-| 시각화 | HSV 컬러맵 (방향=색, 크기=밝기) | 녹색 화살표 + 빨간 점 |
-| 장점 | 전체 움직임 패턴 파악 | 빠르고 직관적 |
+| 대상 | 모든 픽셀 | 코너 ~200개 |
+| 시각화 | HSV 컬러맵 | 녹색 화살표 |
+| 장점 | 전체 패턴 | 빠르고 직관적 |
 
-### Farneback 주요 파라미터
+### 소스코드 핵심
 
-| 파라미터 | 값 | 의미 |
-|----------|-----|------|
-| `pyr_scale=0.5` | 0.5 | 이미지 피라미드 축소 비율 (다단계 해상도) |
-| `levels=3` | 3 | 피라미드 단계 수 (거친→세밀) |
-| `winsize=15` | 15 | 주변 15×15 픽셀 영역을 보고 이동 추정 |
-
-### 소스코드 핵심 기능
-
-#### ① `compute_dense_optical_flow()`
-
-```python
-cv2.calcOpticalFlowFarneback(g0, g1, ...)
-# 반환: (H, W, 2) — [:,:,0]=x방향, [:,:,1]=y방향 이동량
-```
-
-#### ② `flow_to_hsv_image()`
-
-1. `cv2.cartToPolar()`: (dx, dy) → (magnitude, angle) 극좌표 변환
-2. angle → Hue(0~179), magnitude → Value(0~255)로 HSV 이미지 생성
-3. BGR로 변환해 화면에 표시
-
-#### ③ `compute_sparse_optical_flow_lk()`
-
-```
-1단계: goodFeaturesToTrack → Shi-Tomasi 코너 최대 200개 검출
-2단계: calcOpticalFlowPyrLK → 다음 프레임에서 점 추적
-3단계: 추적 성공 점에 arrowedLine(화살표) + circle(끝점) 그리기
-```
-
-#### ④ `visualize_optical_flow_comparison()`
-
-- 2×2 그리드: 이전/다음 프레임 | Farneback HSV | Lucas-Kanade 화살표
-
-#### ⑤ 섹션 2 실행 코드 (Cell 11)
-
-```python
-frames = read_all_frames_bgr(video_path)
-pair_idx = 10  # 10→11번 프레임 (양궁 동작 구간)
-visualize_optical_flow_comparison(frames[10], frames[11], ...)
-```
+- `compute_dense_optical_flow()` — `calcOpticalFlowFarneback`
+- `flow_to_hsv_image()` — angle→Hue, magnitude→Value
+- `compute_sparse_optical_flow_lk()` — goodFeaturesToTrack + PyrLK
+- `visualize_optical_flow_comparison()` — 2×2 비교 그림
 
 ---
 
-## 3. SlowFast Network — Dual-pathway(듀얼 패스웨이)
+## 3. SlowFast Network — Dual-pathway
 
 ### 이 섹션에서 배우는 것
 
-- **SlowFast(슬로우패스트):** 하나의 비디오를 **두 갈래 경로**로 나눠 처리하는 3D CNN 아키텍처
-- Slow(느린) 경로는 **공간(고해상도)**, Fast(빠른) 경로는 **시간(저해상도·고프레임)** 을 담당한다.
+- SlowFast가 비디오를 **두 갈래 경로**로 나눠 처리하는 이유를 이해한다.
 
-### 핵심 용어
+### Vision·Video AI 전문 용어 (강의용)
 
-- **SlowFast(슬로우패스트):** Facebook AI Research(FAIR)가 제안한 이중 경로 비디오 인식 네트워크
-- **Dual-pathway(듀얼 패스웨이, 이중 경로):** 하나의 입력을 두 개의 서로 다른 경로(Slow + Fast)로 처리
-- **Slow Pathway(슬로우 패스웨이):** 프레임 수 적음(8프), **원본 고해상도** → "무엇인지"(객체·형태) 파악
-- **Fast Pathway(패스트 패스웨이):** 프레임 수 많음(α=4배), **112×112 저해상도** → "어떻게 움직이는지" 파악
-- **Alpha(알파, α):** Fast 경로의 프레임 밀도 배율. α=4이면 Slow 8프 → Fast 32프
-- **P-cell / M-cell(피셀 / 엠셀):** 인간 망막의 두 종류 신경세포. P-cell=고해상도·저속, M-cell=저해상도·고속 → SlowFast의 생물학적 영감
-- **3D CNN(쓰리디 씨엔엔):** 시간 축까지 포함한 3차원 합성곱 신경망 (섹션 4에서 상세)
+**SlowFast(슬로우패스트)**  
+Facebook AI Research(FAIR)가 제안한 **이중 경로(dual-pathway) 3D CNN**입니다. 같은 클립을 Slow·Fast 두 갈래로 나눠 처리합니다. Slow는 적은 프레임·고해상도로 "무엇인지(객체·형태)", Fast는 많은 프레임·저해상도로 "어떻게 움직이는지"를 담당합니다. 인간 망막의 P-cell(고해상·저속) / M-cell(저해상·고속)에서 영감을 받았다고 알려져 있습니다.
 
-### Slow vs Fast 비교
+**Dual-pathway(이중 경로)**  
+하나의 입력을 서로 다른 시간·공간 해상도로 두 경로에 동시에 넣는 설계입니다. 단일 3D CNN이 모든 프레임을 고해상도로 처리하면 연산량이 폭증하는데, SlowFast는 **효율과 정확도의 균형**을 노립니다.
 
-| | Slow Pathway | Fast Pathway |
-|---|-------------|--------------|
-| 프레임 수 | 8 (적음) | 32 (α=4배) |
-| 해상도 | 원본 (고해상도) | 112×112 (저해상도) |
-| 역할 | Spatial — 형태·세부 | Temporal — 빠른 동작 |
-| 비유 | "사진을 자세히 본다" | "움직임을 빠르게 본다" |
+**Slow Pathway**  
+프레임 수 적음(예: 8), **원본 해상도** 유지. Spatial(형태·세부) 정보를 담습니다.
 
-> **강의 포인트:** 본 실습은 SlowFast **입력 구성 원리**를 시각화한다. 실제 torchvision SlowFast 추론은 별도 dual-tensor 파이프라인이 필요하다.
+**Fast Pathway**  
+프레임 수 많음(α=4배 → 32), **112×112 저해상도**. Temporal(빠른 동작) 정보를 담습니다.
 
-### 소스코드 핵심 기능
+**Alpha(α)**  
+Fast 경로의 프레임 밀도 배율입니다. α=4이면 Slow 8프레임 대비 Fast 32프레임을 사용합니다.
 
-#### ① `build_slowfast_pathways()`
+### Slow vs Fast
 
-```
-Slow: 전체에서 8프레임 균등 샘플링, 원본 해상도 유지
-Fast: 32프레임 균등 샘플링, cv2.resize(112, 112)로 축소
-```
+| | Slow | Fast |
+|---|------|------|
+| 프레임 | 8 (적음) | 32 (α=4배) |
+| 해상도 | 원본 | 112×112 |
+| 역할 | Spatial — 형태 | Temporal — 동작 |
 
-#### ② `visualize_slowfast_pathways()`
+### 소스코드 핵심
 
-- Slow / Fast 프레임을 각각 가로 모자이크(`np.hstack`)로 붙여 2행 그래프로 표시
-
-#### ③ `print_architecture_comparison_table()`
-
-- C3D, I3D, SlowFast, TimeSformer, ViViT, Swin3D 아키텍처를 한 표로 비교 출력
+- `build_slowfast_pathways()` — Slow 균등 8 + Fast 32 (resize 112)
+- `visualize_slowfast_pathways()` — 두 경로 모자이크
+- `print_architecture_comparison_table()` — C3D~Swin3D 비교표
 
 ---
 
-## 4. 3D CNN Architectures(쓰리디 씨엔엔 아키텍처)
+## 4. 3D CNN Architectures
 
 ### 이 섹션에서 배우는 것
 
-- **3D CNN**으로 비디오 **행동 인식(Action Recognition)** 을 수행한다.
-- R3D(C3D 계열), MC3(I3D 계열), Swin3D(Video Swin) 세 모델의 추론 결과를 비교한다.
+- **3D CNN**으로 Action Recognition(행동 인식)을 수행한다.
+- R3D, MC3, Swin3D 추론 결과를 비교한다.
 
-### 핵심 용어
+### Vision·Video AI 전문 용어 (강의용)
 
-- **3D CNN(쓰리디 씨엔엔):** Conv3D(씨온브쓰리디) — 커널이 `(시간, 높이, 너비)` 3차원. **시간 패턴을 직접 학습**
-- **2D CNN(투디 씨엔엔):** Conv2D — `(높이, 너비)`만. 프레임별 공간 특징만 추출
-- **C3D(씨쓰리디):** 3D Convolution을 처음 비디오에 적용한 대표 모델 (2014)
-- **R3D-18(알쓰리디-18):** ResNet-18(레즈넷-18) 구조를 3D Conv로 확장. torchvision에서 C3D 계열 대표
-- **I3D(아이쓰리디, Inflated 3D):** 2D CNN(ImageNet 사전학습) 가중치를 3D로 **Inflation(인플레이션, 팽창)** 해 전이 학습
-- **MC3-18(엠씨쓰리-18):** Mixed Convolution 3D. I3D 계열. 채널별 Conv3D 구조
-- **Inflation(인플레이션):** 2D 필터를 시간 축 방향으로 복제·확장해 3D 필터로 만드는 기법. ImageNet 지식을 비디오에 전이
-- **Swin3D(스윈쓰리디, Video Swin Transformer):** 3D Window Attention(윈도우 어텐션)으로 로컬 시공간 패치 내 Self-Attention
-- **Self-Attention(셀프 어텐션):** 입력 패치들끼리 서로 "어디를 중요하게 볼지" 가중치를 계산
-- **Action Recognition(액션 레코그니션, 행동 인식):** 비디오에서 "걷기", "양궁" 등 행동 클래스를 분류
-- **Softmax(소프트맥스):** logits(로짓, 모델 출력 점수)를 0~1 확률로 변환. 합이 1
-- **Top-k(탑케이):** 확률 상위 k개 클래스를 출력
+**3D CNN(3차원 합성곱 신경망)**  
+Conv3D 커널이 **(시간 × 높이 × 너비)** 3축을 동시에 훑습니다. 2D CNN이 한 프레임의 공간만 본다면, 3D CNN은 **여러 프레임에 걸친 시공간 패턴**(손 흔들기, 달리기 등)을 직접 학습합니다. 비디오 행동 인식의 핵심 아키텍처 family입니다.
+
+**C3D(2014)**  
+3D Convolution을 비디오에 처음 본격 적용한 대표 모델입니다. 시간·공간을 같은 convolution으로 처리해 "작은 시공간 큐브" 단위 특징을 쌓습니다.
+
+**R3D-18**  
+ResNet-18 구조를 3D Conv로 확장한 모델입니다. torchvision에서 C3D 계열 대표로 제공되며, Kinetics-400으로 사전학습된 weight를 씁니다.
+
+**I3D(Inflated 3D)**  
+ImageNet에서 학습된 **2D CNN 가중치**를 시간 축 방향으로 복제·확장(Inflation)해 3D 필터로 만드는 전략입니다. 이미지에서 배운 특징 추출 능력을 비디오에 **전이(transfer)** 합니다.
+
+**Inflation(인플레이션)**  
+2D 필터 (H×W)를 (T×H×W) 3D 필터로 "팽창"시키는 기법입니다. T=1이면 2D와 동일, T>1이면 시간 방향으로 같은 패턴을 반복 적용한 것과 같습니다.
+
+**MC3-18(Mixed Convolution 3D)**  
+I3D 계열로, 채널별로 다른 Conv3D 구조를 섞어 효율을 높인 모델입니다.
+
+**Swin3D(Video Swin Transformer)**  
+2D Swin의 **3D Window Attention**을 비디오에 적용한 Transformer 계열 모델입니다. 작은 시공간 윈도우 안에서 Self-Attention을 계산해, 전역 attention보다 연산 효율이 좋습니다. "3D CNN 섹션"과 "Video Transformer 섹션"의 경계에 있는 모델입니다.
+
+**Self-Attention(자기 주의)**  
+입력 token(패치)들끼리 "서로 얼마나 관련 있는지" 가중치를 계산하는 메커니즘입니다. Transformer의 핵심으로, 먼 프레임·먼 공간 위치 간 관계도 직접 연결할 수 있습니다.
+
+**Action Recognition(행동 인식)**  
+비디오 클립에서 "걷기", "양궁", "춤" 등 **행동 클래스**를 분류하는 과제입니다. 본 실습은 archery 클립에 대해 Top-k 클래스를 출력합니다.
 
 ### 3D CNN vs 2D CNN
 
 ```
-2D Conv:  [높이 × 너비]         → 한 프레임의 공간만
-3D Conv:  [시간 × 높이 × 너비]   → 여러 프레임의 시공간 패턴
+2D Conv:  [높이 × 너비]         → 한 프레임 공간만
+3D Conv:  [시간 × 높이 × 너비]   → 여러 프레임 시공간 패턴
 ```
 
-### 모델 비교표
+### 모델 비교
 
-| Model | 교재 대응 | 핵심 원리 | 입력 |
-|-------|-----------|-----------|------|
-| R3D-18 | C3D | 3D Conv로 시공간 동시 학습 | 16프 × 112² |
-| MC3-18 | I3D | 2D→3D Inflation, ImageNet 전이 | 16프 × 112² |
-| Swin3D-T | Video Swin | 3D Window Attention | 32프 × 224² |
+| Model | 교재 대응 | 입력 |
+|-------|-----------|------|
+| R3D-18 | C3D | 16프 × 112² |
+| MC3-18 | I3D | 16프 × 112² |
+| Swin3D-T | Video Swin | 32프 × 224² |
 
-### 전처리 파이프라인
+### 소스코드 핵심
 
-```
-RGB 프레임 (T,H,W,C)
-  → numpy stack → PyTorch TCHW tensor
-  → weights.transforms() (리사이즈·크롭·정규화)
-  → CTHW float32
-  → 모델 입력
-```
-
-- **TCHW / CTHW:** Tensor 차원 순서. T=Time, C=Channel, H=Height, W=Width
-
-### 소스코드 핵심 기능
-
-#### ① `_prepare_torchvision_clip()`
-
-- OpenCV RGB 프레임 → `(T,C,H,W)` uint8 tensor → torchvision transform → `(C,T,H,W)` float32
-
-#### ② `predict_torchvision_video_model()`
-
-```
-1. clip 준비 (배치 차원 추가 → shape: 1,C,T,H,W)
-2. model.eval() + torch.no_grad() → 추론
-3. F.softmax → top-k 클래스명 + 확률 반환
-```
-
-#### ③ `run_3d_cnn_benchmark()`
-
-- R3D-18, MC3-18, Swin3D-T 순차 로드·추론
-- `RUN_SWIN3D=False`이면 Swin3D 건너뜀 (가중치 ~122MB)
-
-#### ④ `print_predictions()`
-
-- Top-5 행동 라벨과 확률(%)을 보기 좋게 출력
+- `_prepare_torchvision_clip()` — RGB → (C,T,H,W) tensor
+- `predict_torchvision_video_model()` — softmax top-k
+- `run_3d_cnn_benchmark()` — R3D, MC3, Swin3D 순차 추론
 
 ---
 
-## 5. Video Transformer(비디오 트랜스포머)
+## 5. Video Transformer
 
 ### 이 섹션에서 배우는 것
 
-- CNN 대신 **Transformer(트랜스포머)** 의 Attention 메커니즘으로 비디오를 이해한다.
-- **TimeSformer(타임스포머)** 와 **ViViT(비비트)** 의 Space-Time Attention 방식 차이를 이해한다.
+- CNN 대신 **Transformer Attention**으로 비디오를 이해한다.
+- TimeSformer와 ViViT의 Space-Time Attention 차이를 이해한다.
 
-### 핵심 용어
+### Vision·Video AI 전문 용어 (강의용)
 
-- **Transformer(트랜스포머):** "Attention is All You Need" 논문의 Self-Attention 기반 신경망. NLP(자연어)에서 시작, Vision(비전)으로 확장
-- **TimeSformer(타임스포머):** Facebook이 제안. **Divided Space-Time Attention(디바이디드 스페이스-타임 어텐션)** — Spatial Attention → Temporal Attention 순차 분리
-- **ViViT(비비트, Video Vision Transformer):** Google이 제안. **Tubelet(튜블릿)** 임베딩 + **Factorized Attention(팩터라이즈드 어텐션)**
-- **Tubelet(튜블릿):** 연속 2프레임 × 16×16 패치를 하나의 3D 토큰으로 묶은 단위. "작은 시공간 덩어리"
-- **Token(토큰):** Transformer에 입력되는 최소 단위 (텍스트의 단어, 비전의 패치/튜블릿)
-- **Patch(패치):** 이미지를 잘게 나눈 조각 (예: 16×16)
-- **Attention(어텐션):** "어떤 부분에 집중할지" 가중치를 학습하는 메커니즘
-- **AutoImageProcessor(오토이미지프로세서):** Hugging Face의 이미지/비디오 전처리기 (리사이즈, 정규화 자동)
-- **Logits(로짓):** 모델의 raw 출력 점수 (아직 확률 아님)
+**Transformer**  
+"Attention is All You Need" 논문의 Self-Attention 기반 신경망입니다. NLP에서 출발했으나, ViT 이후 **Vision Transformer**로 이미지·비디오에 확장되었습니다. CNN의 inductive bias(지역성) 대신, 데이터와 attention으로 패턴을 학습합니다.
 
-### Space-Time Attention 3가지
+**TimeSformer(타임스포머)**  
+Facebook이 제안한 Video Transformer입니다. **Divided Space-Time Attention**을 씁니다. 모든 시공간 패치에 한꺼번에 attention(Joint)을 걸면 연산량이 폭발하므로, **Spatial Attention → Temporal Attention**을 순차 분리해 Joint 대비 약 10배 효율을 얻습니다. 입력 8프 × 224², Kinetics-400 fine-tune 모델이 Hugging Face에 공개되어 있습니다.
 
-| 방식 | 설명 | 대표 모델 | 효율 |
-|------|------|-----------|------|
-| **Joint Attention(조인트 어텐션, ST)** | 모든 시공간 패치에 한 번에 Attention | — | 연산량 최대 |
-| **Divided Attention(디바이디드, T+S)** | Spatial → Temporal 순차 분리 | TimeSformer | Joint 대비 ~10× 효율 |
-| **Factorized Attention(팩터라이즈드)** | 시공간 축을 독립 Encoder로 분해 | ViViT | Tubelet 단위 특징 |
+**ViViT(Video Vision Transformer)**  
+Google이 제안한 Video Transformer입니다. 연속 2프레임 × 16×16 패치를 묶은 **Tubelet**을 3D token으로 쓰고, **Factorized Attention**으로 시간·공간 축을 분리 처리합니다. 입력 32프 × 224²로 TimeSformer보다 긴 시간 맥락을 다룹니다.
+
+**Tubelet(튜블릿)**  
+ViViT의 3D token 단위입니다. "2프레임 × 16×16 패치"를 하나의 작은 **시공간 덩어리**로 묶어, 프레임 간 움직임이 token 안에 포함되도록 합니다.
+
+**Token / Patch**  
+ViT·ViViT에서 Transformer 입력의 최소 단위입니다. 이미지는 2D patch, ViViT는 3D tubelet이 token이 됩니다.
+
+**Attention(어텐션)**  
+Query-Key-Value 구조로 "어떤 token에 집중할지" 가중치를 학습합니다. 비디오에서는 "발사 순간 프레임"에 높은 attention이 가는 식으로 **중요 시공간 위치**를 자동 선택합니다.
+
+**Space-Time Attention 3가지**
+
+| 방식 | 설명 | 대표 |
+|------|------|------|
+| Joint (ST) | 모든 시공간 패치 동시 attention | 연산 최대 |
+| Divided (T+S) | Spatial → Temporal 순차 | TimeSformer |
+| Factorized | 시간·공간 독립 encoder | ViViT |
 
 ### TimeSformer vs ViViT
 
 | | TimeSformer | ViViT |
 |---|-------------|-------|
-| Attention | Divided (T+S) | Factorized |
+| Attention | Divided (T+S) | Factorized + Tubelet |
 | 입력 | 8프 × 224² | 32프 × 224² |
-| 핵심 | 공간 먼저, 시간 나중 | Tubelet(2×16×16) 3D 토큰 |
-| 모델 ID | `facebook/timesformer-base-finetuned-k400` | `google/vivit-b-16x2-kinetics400` |
 
-### TimeSformer 파이프라인
+### 소스코드 핵심
 
-```
-RGB 프레임 8장
-  → AutoImageProcessor (224×224, mean/std 정규화)
-  → pixel_values (1, 8, 3, 224, 224)
-  → TimesformerForVideoClassification
-  → logits (400,) → softmax → top-k
-```
-
-### 소스코드 핵심 기능
-
-#### ① `predict_timesformer()`
-
-1. 8프레임 RGB 샘플링
-2. `AutoImageProcessor` + `TimesformerForVideoClassification` 로드
-3. `model.eval()` + `torch.no_grad()` 추론
-4. softmax → top-k Kinetics-400 라벨 반환
-
-#### ② `predict_vivit()`
-
-1. 32프레임 RGB 샘플링
-2. `VivitImageProcessor` + `VivitForVideoClassification` 로드
-3. Tubelet size `[2, 16, 16]` 정보 함께 출력
-4. softmax → top-k 반환
-
-#### ③ `print_space_time_attention_guide()`
-
-- Joint / Divided / Factorized Attention 개념을 콘솔에 출력
+- `predict_timesformer()` — 8프, `facebook/timesformer-base-finetuned-k400`
+- `predict_vivit()` — 32프, tubelet [2,16,16]
+- `print_space_time_attention_guide()` — Joint/Divided/Factorized 설명
 
 ---
 
 ## 6. 모델 비교 요약
 
-### 이 섹션에서 배우는 것
-
-- Classical → 3D CNN → Video Transformer **기술 진화 타임라인**을 정리한다.
-- 동일 archery 샘플에 대해 **모든 모델의 Top-1 예측**을 한 표로 비교한다.
-
-### Vision 기술 진화 타임라인
+### Vision 기술 진화
 
 ```
-Optical Flow (픽셀 변위, 규칙 기반)
+Optical Flow (규칙 기반 픽셀 변위)
         ↓
-3D CNN — C3D → I3D → SlowFast (시공간 Convolution)
+3D CNN — C3D → I3D → SlowFast
         ↓
-Video Transformer — TimeSformer / ViViT / Swin3D (Self-Attention)
+Video Transformer — TimeSformer / ViViT / Swin3D
 ```
 
-### 단계별 Temporal 정보 추출 방식
+| 단계 | Temporal 정보 추출 |
+|------|-------------------|
+| Classical | Farneback, LK — 픽셀/코너 이동 벡터 |
+| 3D CNN | 3D Conv / 3D Window Attention |
+| Transformer | Divided / Factorized Self-Attention |
 
-| 단계 | 대표 기법 | Temporal 정보 추출 |
-|------|-----------|-------------------|
-| Classical(클래시컬) | Farneback, Lucas-Kanade | 픽셀/코너 이동 벡터 (규칙 기반) |
-| 3D CNN | R3D, MC3, Swin3D | 3D Conv / 3D Window Attention |
-| Transformer | TimeSformer, ViViT | Divided / Factorized Self-Attention |
+### 소스코드
 
-### 아키텍처 한눈에 비교
-
-| Architecture | Core Concept | Key Advantage |
-|--------------|--------------|---------------|
-| C3D / R3D-18 | 고정 3D Conv | 단순·빠른 시공간 학습 |
-| I3D / MC3-18 | 2D 가중치 Inflation | ImageNet 지식 전이 |
-| SlowFast | Slow+Fast 이중 경로 | 효율·정밀도 균형 |
-| Swin3D | 3D Window Attention | 로컬 시공간 맥락 |
-| TimeSformer | Divided Space-Time | Joint 대비 ~10× 효율 |
-| ViViT | Tubelet + Factorized | 시공간 튜브 단위 특징 |
-
-### 소스코드 핵심 기능
-
-#### ① `print_model_comparison_summary()`
-
-- R3D, MC3, Swin3D, TimeSformer, ViViT 각 모델의 **Top-1 라벨 + 확률**을 한 표로 출력
-
-#### ② 섹션 6 실행 코드 (Cell 22)
-
-```python
-print_model_comparison_summary(all_results)
-print("결과 이미지 저장:", OUTPUT_DIR.resolve())
-```
-
-### 실습 결론
-
-- archery 샘플에 대해 대부분 모델이 **"archery(양궁)"** 를 Top-1으로 예측한다.
-- Classical(광학 흐름)부터 딥러닝(3D CNN, Transformer)까지 **서로 다른 방식**이지만, 같은 행동 클립을 **일관되게 인식**함을 확인할 수 있다.
+- `print_model_comparison_summary()` — 모든 모델 Top-1 한 표
 
 ---
 
-## 부록: 출력 파일 위치
+## 부록: 출력 파일
 
-| 폴더 | 저장 파일 | 내용 |
-|------|-----------|------|
-| `output/spatiotemporal/` | `spatial_vs_temporal.png` | 공간 vs 시간 시각화 |
-| | `motion_energy_timeline.png` | Motion Energy 그래프 |
-| `output/optical_flow/` | `flow_compare_0010.png` | Farneback vs LK 비교 |
-| `output/slowfast/` | `slowfast_pathways.png` | Slow/Fast 경로 모자이크 |
+| 폴더 | 파일 |
+|------|------|
+| `output/spatiotemporal/` | spatial_vs_temporal.png, motion_energy_timeline.png |
+| `output/optical_flow/` | flow_compare_0010.png |
+| `output/slowfast/` | slowfast_pathways.png |
 
 ---
 
-## 부록: 강의 시 자주 나오는 질문 (FAQ)
+## FAQ
 
-**Q. 왜 BGR과 RGB를 변환하나요?**  
-A. OpenCV는 BGR 순서로 읽고, PyTorch/Hugging Face 모델은 RGB를 기대합니다. `cv2.cvtColor(..., cv2.COLOR_BGR2RGB)`로 변환합니다.
+**Q. Optical Flow와 3D CNN의 차이?**  
+A. Optical Flow는 **규칙 기반**으로 "픽셀이 어디로 갔는지" 계산합니다. 3D CNN·Transformer는 **데이터로부터** "어떤 행동인지"를 학습합니다.
 
-**Q. 왜 프레임을 균등 샘플링하나요?**  
-A. 모델마다 고정 프레임 수(8, 16, 32)를 요구하기 때문입니다. 영상 길이와 상관없이 일정 간격으로 뽑아 **클립 길이를 맞춥니다.**
+**Q. TimeSformer vs ViViT?**  
+A. Attention **분리 방식**이 다릅니다. TimeSformer는 공간→시간 순차(Divided), ViViT는 Tubelet 3D token + Factorized. 입력 프레임 수도 8 vs 32입니다.
 
-**Q. Optical Flow와 3D CNN의 차이는?**  
-A. Optical Flow는 **규칙 기반**으로 "픽셀이 어디로 갔는지" 계산합니다. 3D CNN은 **데이터로부터** "어떤 행동인지"를 학습합니다.
-
-**Q. TimeSformer와 ViViT 중 뭐가 더 좋나요?**  
-A. "더 좋다"기보다 **Attention 방식**이 다릅니다. TimeSformer는 공간→시간 순차 분리, ViViT는 Tubelet 단위 3D 토큰을 사용합니다. 입력 프레임 수도 8 vs 32로 다릅니다.
-
-**Q. Swin3D는 CNN인가요 Transformer인가요?**  
-A. **Transformer 계열**입니다. 3D Window Attention을 사용하며, 섹션 4(3D CNN)와 섹션 5(Video Transformer)의 경계에 있는 모델입니다.
+**Q. Swin3D는 CNN인가 Transformer인가?**  
+A. **Transformer 계열**입니다. 3D Window Attention을 사용합니다.
 
 ---
 
